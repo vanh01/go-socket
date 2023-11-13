@@ -8,29 +8,21 @@ import (
 	"strings"
 )
 
-func readDataFromReader(reader *bufio.Reader) (chan string, chan int) {
-	r := make(chan int)
-	s := make(chan string)
-	go func() {
-		ss := ""
-		for {
-			if reader.Buffered() == 0 {
-				r <- 0
-				s <- ss
-				return
-			}
-			receive := make([]byte, 5)
-			rlen, err := reader.Read(receive)
-			if err != nil {
-				r <- 1
-				s <- ss
-				return
-			}
-			str := string(receive[:rlen])
-			ss += str
+func readData(reader *bufio.Reader) string {
+	ss := ""
+	for {
+		if reader.Buffered() == 0 {
+			break
 		}
-	}()
-	return s, r
+		receive := make([]byte, 5)
+		rlen, err := reader.Read(receive)
+		if err != nil {
+			return ""
+		}
+		str := string(receive[:rlen])
+		ss += str
+	}
+	return ss
 }
 
 func main() {
@@ -57,9 +49,7 @@ func main() {
 		}
 		reader := bufio.NewReader(connection)
 		reader.Peek(1)
-		i, j := readDataFromReader(reader)
-		<-j
-		response := <-i
+		response := readData(reader)
 		fmt.Printf("sever reply: %s\n", response)
 	}
 }

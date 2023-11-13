@@ -6,29 +6,21 @@ import (
 	"net"
 )
 
-func readDataFromReader(reader *bufio.Reader) (chan string, chan int) {
-	r := make(chan int)
-	s := make(chan string)
-	go func() {
-		ss := ""
-		for {
-			if reader.Buffered() == 0 {
-				r <- 0
-				s <- ss
-				return
-			}
-			receive := make([]byte, 5)
-			rlen, err := reader.Read(receive)
-			if err != nil {
-				r <- 1
-				s <- ss
-				return
-			}
-			str := string(receive[:rlen])
-			ss += str
+func readData(reader *bufio.Reader) string {
+	ss := ""
+	for {
+		if reader.Buffered() == 0 {
+			break
 		}
-	}()
-	return s, r
+		receive := make([]byte, 5)
+		rlen, err := reader.Read(receive)
+		if err != nil {
+			return ""
+		}
+		str := string(receive[:rlen])
+		ss += str
+	}
+	return ss
 }
 
 func receiveData(conn net.Conn) {
@@ -36,16 +28,14 @@ func receiveData(conn net.Conn) {
 	for {
 		reader := bufio.NewReader(conn)
 		reader.Peek(1)
-		s, i := readDataFromReader(reader)
-		err := <-i
-		ss := <-s
-		if err == 1 || ss == "" {
+		s := readData(reader)
+		if s == "" {
 			fmt.Printf("connection from %s is closed!\n", conn.RemoteAddr().String())
 			conn.Close()
 			break
 		}
-		fmt.Printf("data received: %s\n", ss)
-		conn.Write([]byte(fmt.Sprintf("received: %s", ss)))
+		fmt.Printf("data received: %s\n", s)
+		conn.Write([]byte(fmt.Sprintf("received: %s", s)))
 	}
 }
 
