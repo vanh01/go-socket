@@ -50,6 +50,10 @@ func main() {
 		reader := bufio.NewReader(connection)
 		reader.Peek(1)
 		response := readData(reader)
+		if response == "#closed" {
+			fmt.Printf("connection to %s is closed!\n", connection.RemoteAddr().String())
+			break
+		}
 		fmt.Printf("sever reply: %s\n", response)
 	}
 }
